@@ -1,0 +1,25 @@
+# ---- Terraform ----
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+terraform/crash.log
+terraform/*.tfvars
+
+# Ignore local-only backend override files
+terraform/backend_override.tf
+
+# ---- Ansible ----
+# Ignore private SSH keys
+ansible/*.pem
+ansible/*.pub
+
+# Ansible cache
+ansible/.ansible/
+ansible/__pycache__/
+
+# ---- General OS / Editor files ----
+*.DS_Store
+Thumbs.db
+*.swp
+*.swo

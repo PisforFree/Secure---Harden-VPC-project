@@ -1,0 +1,80 @@
+---
+- name: Baseline hardening for secure AWS project
+  hosts: web
+  become: true
+
+  vars:
+    # You can tweak these later if needed
+    sshd_config_path: /etc/ssh/sshd_config
+
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Upgrade all packages to latest
+      ansible.builtin.apt:
+        upgrade: dist
+      when: ansible_os_family == "Debian"
+
+    - name: Install baseline security packages
+      ansible.builtin.apt:
+        name:
+          - ufw
+          - fail2ban
+        state: present
+      when: ansible_os_family == "Debian"
+
+    # ---------- SSH hardening ----------
+    - name: Disable root SSH login
+      ansible.builtin.lineinfile:
+        path: "{{ sshd_config_path }}"
+        regexp: '^PermitRootLogin'
+        line: 'PermitRootLogin no'
+        state: present
+        backup: yes
+
+    - name: Disable password authentication
+      ansible.builtin.lineinfile:
+        path: "{{ sshd_config_path }}"
+        regexp: '^PasswordAuthentication'
+        line: 'PasswordAuthentication no'
+        state: present
+        backup: yes
+
+    - name: Ensure X11 forwarding is disabled
+      ansible.builtin.lineinfile:
+        path: "{{ sshd_config_path }}"
+        regexp: '^X11Forwarding'
+        line: 'X11Forwarding no'
+        state: present
+        backup: yes
+
+    - name: Restart SSH service after config change
+      ansible.builtin.service:
+        name: ssh
+        state: restarted
+      when: ansible_service_mgr == "systemd"
+
+    # ---------- UFW firewall ----------
+    - name: Set default UFW policies (deny incoming, allow outgoing)
+      community.general.ufw:
+        state: enabled
+        policy: deny
+        direction: incoming
+
+    - name: Ensure UFW default allow for outgoing traffic
+      community.general.ufw:
+        direction: outgoing
+        policy: allow
+
+    - name: Allow SSH via UFW
+      community.general.ufw:
+        rule: allow
+        port: "22"
+        proto: tcp
+
+    - name: Enable UFW
+      community.general.ufw:
+        state: enabled
