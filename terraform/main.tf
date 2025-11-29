@@ -19,7 +19,7 @@ resource "aws_vpc" "main" {
 resource "aws_subnet" "public" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = var.public_subnet_cidr
-  map_public_ip_on_launch = true
+  map_public_ip_on_launch = false
 
   tags = {
     Name        = "${var.project_name}-public-subnet"
@@ -100,10 +100,11 @@ resource "aws_route_table_association" "private_assoc" {
 
 resource "aws_security_group" "ec2_sg" {
   name        = "${var.project_name}-ec2-sg"
-  description = "Allow SSH only from my IP"
+  description = "Security group for hardened EC2 instance"
   vpc_id      = aws_vpc.main.id
 
   ingress {
+    description = "Allow SSH from admin IP"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
@@ -111,11 +112,14 @@ resource "aws_security_group" "ec2_sg" {
   }
 
   egress {
+    description = "Allow all outbound traffic for updates and package installs"
+    # tfsec:ignore:aws-ec2-no-public-egress-sgr
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
 
   tags = {
     Name        = "${var.project_name}-ec2-sg"
@@ -161,7 +165,18 @@ resource "aws_instance" "web" {
   instance_type          = var.instance_type
   subnet_id              = aws_subnet.public.id
   vpc_security_group_ids = [aws_security_group.ec2_sg.id]
-  key_name               = aws_key_pair.ansible_key.key_name
+  key_name               = var.ssh_key_name
+
+  # Encrypt the root EBS volume at rest
+  root_block_device {
+    encrypted = true
+  }
+
+  # Extra hardening: enforce IMDSv2 (optional but good practice)
+  metadata_options {
+    http_tokens   = "required"
+    http_endpoint = "enabled"
+  }
 
   tags = {
     Name        = "${var.project_name}-ec2"
