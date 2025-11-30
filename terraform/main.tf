@@ -111,9 +111,10 @@ resource "aws_security_group" "ec2_sg" {
     cidr_blocks = [var.allowed_ssh_cidr]
   }
 
+  # Allow all outbound traffic (needed for updates, etc.)
+  # tfsec:ignore:aws-ec2-no-public-egress-sgr
   egress {
-    description = "Allow all outbound traffic for updates and package installs"
-    # tfsec:ignore:aws-ec2-no-public-egress-sgr
+    description = "Allow all outbound traffic"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
