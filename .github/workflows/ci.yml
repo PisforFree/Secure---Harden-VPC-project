@@ -67,4 +67,3 @@ jobs:
       - name: Run ansible-lint
         working-directory: ansible
         run: ansible-lint playbook.yml
-
