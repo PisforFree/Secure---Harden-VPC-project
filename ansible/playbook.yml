@@ -10,7 +10,7 @@
   tasks:
     - name: Update apt cache
       ansible.builtin.apt:
-        update_cache: yes
+        update_cache: true
       when: ansible_os_family == "Debian"
 
     - name: Upgrade all packages to latest
@@ -33,7 +33,7 @@
         regexp: '^PermitRootLogin'
         line: 'PermitRootLogin no'
         state: present
-        backup: yes
+        backup: true
 
     - name: Disable password authentication
       ansible.builtin.lineinfile:
@@ -41,7 +41,7 @@
         regexp: '^PasswordAuthentication'
         line: 'PasswordAuthentication no'
         state: present
-        backup: yes
+        backup: true
 
     - name: Ensure X11 forwarding is disabled
       ansible.builtin.lineinfile:
@@ -49,7 +49,7 @@
         regexp: '^X11Forwarding'
         line: 'X11Forwarding no'
         state: present
-        backup: yes
+        backup: true
 
     - name: Restart SSH service after config change
       ansible.builtin.service:
